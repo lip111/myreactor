@@ -25,7 +25,7 @@ public:
     // 设置
     void setIp(const std::string& ip);
     void setPort(uint16_t port) { addr_.sin_port = htons(port); }
-
+    void setAddr(const sockaddr_in& addr) { addr_ = addr; }
 
 
 private:
