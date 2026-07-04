@@ -32,6 +32,7 @@ public:
     void setErrorCallback(std::function<void()> cb);
     void handleEvent();
 
+    void setRevents(int revents) { revents_ = revents; }
 
 
 private:
