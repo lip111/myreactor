@@ -4,6 +4,8 @@
 namespace myreactor {
 
 // 构造函数
+InetAddress::InetAddress(): addr_{} {}
+
 InetAddress::InetAddress(uint16_t port, bool loopbackOnly): addr_{} {   // 初始化列表中进行值初始化
     addr_.sin_family = AF_INET;
     addr_.sin_port = htons(port);

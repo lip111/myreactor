@@ -9,6 +9,7 @@ class InetAddress {
 
 public:
     // 构造函数
+    InetAddress();
     explicit InetAddress(uint16_t port, bool loopbackOnly=false);
     InetAddress(const std::string& ip, uint16_t port); 
     explicit InetAddress(const sockaddr_in& addr);
