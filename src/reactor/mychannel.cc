@@ -1,5 +1,6 @@
 #include "mychannel.h"
 #include "sys/epoll.h"
+#include "myeventloop.h"
 
 namespace myreactor {
 
@@ -10,7 +11,7 @@ Channel::Channel(EventLoop* loop, int fd): loop_(loop), fd_(fd),
 Channel::~Channel() { disableAll(); }
 
 void Channel::update() { 
-    // loop_->updateChannel(this);
+    loop_->updateChannel(this); // channel依赖了eventloop,可优化！！！
 }
 
 void Channel::setReadCallback(std::function<void()> cb) {

@@ -34,6 +34,8 @@ int Poller::poll(int timeoutMs, std::vector<Channel*> activeChannels) {
             events_.resize(events_.size() * 2);
         }
     }
+
+    return numEvents;
 }
 
 void Poller::updateChannel(Channel* channel) {
