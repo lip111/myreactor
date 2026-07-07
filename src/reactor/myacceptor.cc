@@ -8,14 +8,14 @@ namespace myreactor {
 Acceptor::Acceptor(EventLoop* loop, const InetAddress& addr)
     :loop_(loop),acceptorSocket_(::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)),
     acceptorChannel_(loop,acceptorSocket_.fd())
-    {
+{
         acceptorSocket_.setReuseAddr(true);
         acceptorSocket_.bind(addr);
         acceptorSocket_.listen();
 
         acceptorChannel_.setReadCallback([this]() { handleRead(); });
         acceptorChannel_.enableReading();
-    }
+}
 Acceptor::~Acceptor() {}
 
 

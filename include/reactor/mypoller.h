@@ -27,7 +27,7 @@ public:
 
 
 private:
-    static const int kInitEventListSize;
+    inline static const int kInitEventListSize = 16;
     int epollfd_;
     std::vector<epoll_event> events_;
     std::unordered_map<int, Channel*> channels_;    // 记录fd是否被注册

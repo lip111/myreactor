@@ -20,8 +20,11 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/include/util/
 )
 
-file(GLOB_RECURSE REACTOR_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/reactor/*.cc
+file(GLOB REACTOR_SOURCES
+    ${PROJECT_SOURCE_DIR}/src/reactor/*.cc
+    ${PROJECT_SOURCE_DIR}/src/tcp/*.cc
+    ${PROJECT_SOURCE_DIR}/src/thread/*.cc
+    ${PROJECT_SOURCE_DIR}/src/util/*.cc
 )
 
 file(GLOB TEST_FILES test/*.cpp)

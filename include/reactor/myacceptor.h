@@ -11,7 +11,7 @@ class EventLoop;
 class Acceptor {
 
 public:
-    using NewConnectionCallback = std::function<void(int sockfd, const InetAddress& addr)>;
+    using NewConnectionCallback = std::function<void(int connfd, const InetAddress& peeraddr)>;
     // 构造函数
     Acceptor(EventLoop* loop, const InetAddress& addr);
     ~Acceptor(); 

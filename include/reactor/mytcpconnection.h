@@ -27,7 +27,7 @@ public:
     const InetAddress& peeraddr() const { return peeraddr_; }
     const std::string& name() { return name_; }
     bool connected() { return connected_; }
-    bool setConnected(bool flag) { connected_ = flag; }
+    void setConnected(bool flag) { connected_ = flag; }
 
     void setReadCallback(ReadCallback cb) {
         readCallback_ = std::move(cb);

@@ -10,7 +10,7 @@ namespace myreactor {
 // 构造函数
 
 // EPOLL_CLOEXEC保证exec执行时关闭fd,防止被子进程继承
-Poller::Poller(): epollfd_(epoll_create1(EPOLL_CLOEXEC)), events_(kInitEventListSize) {}
+Poller::Poller(): epollfd_(epoll_create1(EPOLL_CLOEXEC)), events_(Poller::kInitEventListSize) {}
 
 Poller::~Poller() {
     ::close(epollfd_);
