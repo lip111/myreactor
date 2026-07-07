@@ -14,6 +14,12 @@ void Channel::update() {
     loop_->updateChannel(this); // channel依赖了eventloop,可优化！！！
 }
 
+void Channel::remove() {
+    loop_->removeChannel(this);
+}
+
+bool Channel::isWriting() const { return events_ & EPOLLOUT; }
+
 void Channel::setReadCallback(std::function<void()> cb) {
     readCallback_ = std::move(cb);
 }

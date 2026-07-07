@@ -18,6 +18,7 @@ public:
     int events() const { return events_; }
     int revents() const { return revents_; }
     EventLoop* loop() const { return loop_; }
+    bool isWriting() const;   // 确保EPOLLOUT事件发生确实是需要写数据
 
     // 设置
     void enableReading();
@@ -33,6 +34,8 @@ public:
     void handleEvent();
 
     void setRevents(int revents) { revents_ = revents; }
+    
+    void remove();
 
 
 private:

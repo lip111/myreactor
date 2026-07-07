@@ -6,22 +6,22 @@ namespace myreactor {
 
 // 构造函数
 Acceptor::Acceptor(EventLoop* loop, const InetAddress& addr)
-    :loop_(loop),AcceptorSocket_(::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)),
-    AcceptorChannel_(loop,AcceptorSocket_.fd())
+    :loop_(loop),acceptorSocket_(::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)),
+    acceptorChannel_(loop,acceptorSocket_.fd())
     {
-        AcceptorSocket_.setReuseAddr(true);
-        AcceptorSocket_.bind(addr);
-        AcceptorSocket_.listen();
+        acceptorSocket_.setReuseAddr(true);
+        acceptorSocket_.bind(addr);
+        acceptorSocket_.listen();
 
-        AcceptorChannel_.setReadCallback([this]() { handleRead(); });
-        AcceptorChannel_.enableReading();
+        acceptorChannel_.setReadCallback([this]() { handleRead(); });
+        acceptorChannel_.enableReading();
     }
 Acceptor::~Acceptor() {}
 
 
 void Acceptor::handleRead() {
     InetAddress peerAddr;
-    int connfd = AcceptorSocket_.accept(&peerAddr);
+    int connfd = acceptorSocket_.accept(&peerAddr);
     if (connfd >= 0) {
         if (newConnectionCallback_)
             newConnectionCallback_(connfd, peerAddr);

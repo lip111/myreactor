@@ -20,9 +20,15 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/include/util/
 )
 
+file(GLOB_RECURSE REACTOR_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/reactor/*.cc
+)
+
 file(GLOB TEST_FILES test/*.cpp)
 
 # 生成测试可执行程序
 add_executable(
-    myreactor_test ${TEST_FILES}
+    myreactor_test ${REACTOR_SOURCES} ${TEST_FILES}
 )
+
+target_link_libraries(myreactor_test pthread)
