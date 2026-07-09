@@ -1,6 +1,7 @@
 #include "mytcpserver.h"
 #include "mytcpconnection.h"
 #include "myacceptor.h"
+#include <iostream>
 
 namespace myreactor {
 
@@ -43,5 +44,8 @@ void TcpServer::removeConnection(const std::shared_ptr<TcpConnection>& conn) {
         connectionCallback_(conn);
 }
 
+void TcpServer::start() {
+    std::cout << "TcpServer listening on " << localaddr_.toIpPort() << std::endl;
+}
 
 }

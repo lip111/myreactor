@@ -1,6 +1,7 @@
 #include "myacceptor.h"
 #include <sys/socket.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 namespace myreactor {
 
@@ -22,6 +23,8 @@ Acceptor::~Acceptor() {}
 void Acceptor::handleRead() {
     InetAddress peerAddr;
     int connfd = acceptorSocket_.accept(&peerAddr);
+    int flags = fcntl(connfd, F_GETFL, 0);
+    fcntl(connfd, F_SETFL, flags | O_NONBLOCK); // 通信socket一定要设置为非阻塞！！！
     if (connfd >= 0) {
         if (newConnectionCallback_)
             newConnectionCallback_(connfd, peerAddr);

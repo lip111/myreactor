@@ -33,9 +33,9 @@ public:
         readCallback_ = std::move(cb);
     }
 
-    void setWriteCallback(WriteCallback cb) {
-        writeCallback_ = std::move(cb);
-    }
+    // void setWriteCallback(WriteCallback cb) {
+    //     writeCallback_ = std::move(cb);
+    // }
 
     void setCloseCallback(CloseCallback cb) {
         closeCallback_ = std::move(cb);
@@ -46,7 +46,7 @@ public:
     }
 
     void setWriteCompleteCallback(WriteCallback cb) {
-        writeCallback_ = std::move(cb);
+        writeCompleteCallback_ = std::move(cb);
     }
 private:
     EventLoop* loop_;
@@ -57,11 +57,11 @@ private:
     std::string name_;
     bool connected_;
 
-    ReadCallback readCallback_;
-    WriteCallback writeCallback_;
+    ReadCallback readCallback_; // 业务相关,从内核读取数据,需要往上传递给tcpserver,tcpserver再提供给用户，最终由用户处理！！！
+    // WriteCallback writeCallback_;   业务无关,不需要tcpserver参与！！！
     CloseCallback closeCallback_;
     ErrorCallback errorCallback_;
-    WriteCompleteCallback writeCompleteCallback_;
+    WriteCompleteCallback writeCompleteCallback_;   // 数据写完这个事情很重要，需要通知tcpserver！！！
 
     Buffer inputbuffer_;
     Buffer outputbuffer_;

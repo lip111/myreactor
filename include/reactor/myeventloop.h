@@ -13,7 +13,7 @@ public:
     ~EventLoop();
 
     // 查询
-    void poll();
+    void loop();
 
     // 设置
     void quit();

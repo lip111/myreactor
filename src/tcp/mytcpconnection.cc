@@ -5,9 +5,10 @@ namespace myreactor {
 
 TcpConnection::TcpConnection(EventLoop* loop, int connfd, const InetAddress& localaddr, const InetAddress& peeraddr) 
     :loop_(loop), connfd_(connfd), localaddr_(localaddr), peeraddr_(peeraddr), connChannel_(loop, connfd),
-    name_(peeraddr.toIpPort()){
+    name_(peeraddr.toIpPort()), connected_(true) {
         
         connChannel_.setReadCallback([this]() { handleRead(); });
+        connChannel_.setWriteCallback([this]() { handleWrite(); });
         connChannel_.enableReading();
     }
 
@@ -20,6 +21,7 @@ void TcpConnection::handleRead() {
 
     int savedErrno = 0;
     auto n = inputbuffer_.readFd(connfd_, &savedErrno);
+    // inputbuffer_.readFd(connfd_, &savedErrno);   //  测试一下通信socket阻塞模式下的线程阻塞！！！
     if (n > 0) {
         if (readCallback_) {
             // 共享指针延长TcpConnection对象生命周期,避免异步执行时对象销毁
@@ -57,6 +59,7 @@ void TcpConnection::handleWrite() {
 void TcpConnection::handleClose() {
     connChannel_.remove();
     ::close(connfd_);
+    setConnected(false);    // 关闭之前设置下状态
     if (closeCallback_)
         closeCallback_(shared_from_this());
 }

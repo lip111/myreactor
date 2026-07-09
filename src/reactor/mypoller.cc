@@ -18,7 +18,7 @@ Poller::~Poller() {
 
 // 查询
 
-int Poller::poll(int timeoutMs, std::vector<Channel*> activeChannels) {
+int Poller::poll(int timeoutMs, std::vector<Channel*>& activeChannels) {    // 注意传递引用！！！
 
     int numEvents = epoll_wait(epollfd_, events_.data(), static_cast<int>(events_.size()), timeoutMs);
     if (numEvents > 0) {

@@ -15,7 +15,7 @@ public:
 
     // 查询
 
-    int poll(int timeoutMs, std::vector<Channel*> activeChannels); 
+    int poll(int timeoutMs, std::vector<Channel*>& activeChannels);
 
     // 设置
 

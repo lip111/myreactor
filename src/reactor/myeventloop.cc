@@ -10,7 +10,7 @@ EventLoop::~EventLoop() {}
 
 // 查询
 // 事件循环主函数
-void EventLoop::poll() {
+void EventLoop::loop() {
     while(!quit_) {
         std::vector<Channel*> activeChannels;
         int numEvents = poller_->poll(10000, activeChannels);

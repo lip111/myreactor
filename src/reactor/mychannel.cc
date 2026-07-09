@@ -11,7 +11,7 @@ Channel::Channel(EventLoop* loop, int fd): loop_(loop), fd_(fd),
 Channel::~Channel() { disableAll(); }
 
 void Channel::update() { 
-    loop_->updateChannel(this); // channel依赖了eventloop,可优化！！！
+    loop_->updateChannel(this);
 }
 
 void Channel::remove() {
@@ -39,22 +39,26 @@ void Channel::setErrorCallback(std::function<void()> cb) {
 void Channel::handleEvent() {
     // 连接挂起并且无输入数据
     if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) {
-        if (closeCallback_) closeCallback_();
+        if (closeCallback_) 
+            closeCallback_();
     } 
 
     // 发生错误
     if (revents_ & EPOLLERR) {
-        if (errorCallback_) errorCallback_();
+        if (errorCallback_) 
+            errorCallback_();
     }
 
     // 有输入或者对端写关闭
     if (revents_ & (EPOLLIN | EPOLLRDHUP)) {
-        if (readCallback_) readCallback_();
+        if (readCallback_) 
+            readCallback_();
     }
 
     // 允许输出
     if (revents_ & (EPOLLOUT)) {
-        if (writeCallback_) writeCallback_();
+        if (writeCallback_) 
+            writeCallback_();
     }
 }
 

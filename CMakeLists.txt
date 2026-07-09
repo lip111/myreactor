@@ -27,7 +27,7 @@ file(GLOB REACTOR_SOURCES
     ${PROJECT_SOURCE_DIR}/src/util/*.cc
 )
 
-file(GLOB TEST_FILES test/*.cpp)
+file(GLOB TEST_FILES test/*.cpp test/*.cc)
 
 # 生成测试可执行程序
 add_executable(
