@@ -19,13 +19,16 @@ public:
     // 设置
     void setNewConnectionCallback(const NewConnectionCallback& cb);
 
-private:
-    EventLoop* loop_;
-    Socket acceptorSocket_;
-    Channel acceptorChannel_;
-    NewConnectionCallback newConnectionCallback_;
+    // 不在构造函数中开启监听,让tcpserver控制监听开始时机！！！
+    void listen();
 
+private:
     void handleRead();
+
+    EventLoop* loop_;
+    Socket socket_;
+    Channel channel_;
+    NewConnectionCallback newConnectionCallback_;
 };
 
 }

@@ -9,11 +9,14 @@ void onConnection(const std::shared_ptr<myreactor::TcpConnection>& conn) {
 
     if (conn->connected()) {
         std::cout << "[INFO] New connection established from "
-                  << conn->peeraddr().toIpPort() << std::endl;  
+            << conn->peeraddr().toIpPort() 
+            << " thread id: " << conn->getLoop()->threadId() << std::endl;  
     }
     else {
         std::cout << "[INFO] Connection from "
-                  << conn->peeraddr().toIpPort() << " closed" << std::endl;
+            << conn->peeraddr().toIpPort() 
+            << " thread id: " << conn->getLoop()->threadId()
+            << " closed" << std::endl;
     }
 }
 
@@ -34,6 +37,8 @@ int main() {
 
     server.setMessageCallback(onMessage);
     server.setConnectionCallback(onConnection);
+
+    server.setThreadNum(3);
     server.start();
 
     loop.loop();

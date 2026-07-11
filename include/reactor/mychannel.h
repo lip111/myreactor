@@ -39,6 +39,8 @@ public:
 
 
 private:
+    void update();
+
     EventLoop* loop_;
     int fd_;
     int events_;    // 感兴趣的事件
@@ -49,8 +51,6 @@ private:
     std::function<void()> writeCallback_;
     std::function<void()> closeCallback_;
     std::function<void()> errorCallback_;
-
-    void update();
 };
 
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "InetAddress.h"
 #include "mychannel.h"
+#include "Socket.h"
 #include "mybuffer.h"
 #include <memory>
 
@@ -21,7 +22,7 @@ public:
     ~TcpConnection();
 
     void send(const std::string& message);
-
+    EventLoop* getLoop() const;
 
     const InetAddress& localaddr() const { return localaddr_; }
     const InetAddress& peeraddr() const { return peeraddr_; }
@@ -48,14 +49,18 @@ public:
     void setWriteCompleteCallback(WriteCallback cb) {
         writeCompleteCallback_ = std::move(cb);
     }
+
+    // 连接注册到epoll实例，使能可读事件
+    void connectEstablished();
+
 private:
     EventLoop* loop_;
-    int connfd_;
     InetAddress localaddr_;
     InetAddress peeraddr_;
-    Channel connChannel_;
+    Socket socket_;
+    Channel channel_;
     std::string name_;
-    bool connected_;
+    bool connected_;    // 标记连接就绪,可收发数据
 
     ReadCallback readCallback_; // 业务相关,从内核读取数据,需要往上传递给tcpserver,tcpserver再提供给用户，最终由用户处理！！！
     // WriteCallback writeCallback_;   业务无关,不需要tcpserver参与！！！

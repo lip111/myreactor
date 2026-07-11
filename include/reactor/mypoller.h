@@ -2,28 +2,29 @@
 #include <vector>
 #include <sys/epoll.h>
 #include <unordered_map>
+#include <abstractpoller.h>
 
 namespace myreactor {
 
 class Channel;
 
-class Poller {
+class EpollPoller: public Poller {
 public:
     // 构造函数
-    Poller();
-    ~Poller();
+    EpollPoller();
+    ~EpollPoller() override;
 
     // 查询
 
-    int poll(int timeoutMs, std::vector<Channel*>& activeChannels);
+    int poll(int timeoutMs, std::vector<Channel*>& activeChannels) override;
 
     // 设置
 
     // 添加或者修改一个fd在epoll中的注册状态
-    void updateChannel(Channel* channel);
+    int updateChannel(Channel* channel) override;
 
     // 移除一个注册的fd
-    void removeChannel(Channel* channel);
+    int removeChannel(Channel* channel) override;
 
 
 private:

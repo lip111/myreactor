@@ -7,24 +7,29 @@ namespace myreactor {
 
 // 构造函数
 Acceptor::Acceptor(EventLoop* loop, const InetAddress& addr)
-    :loop_(loop),acceptorSocket_(::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)),
-    acceptorChannel_(loop,acceptorSocket_.fd())
+    :loop_(loop),
+    socket_(::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)),
+    channel_(loop, socket_.fd())
 {
-        acceptorSocket_.setReuseAddr(true);
-        acceptorSocket_.bind(addr);
-        acceptorSocket_.listen();
+    socket_.setReuseAddr(true);
+    socket_.bind(addr);  
 
-        acceptorChannel_.setReadCallback([this]() { handleRead(); });
-        acceptorChannel_.enableReading();
+    channel_.setReadCallback([this]() { handleRead(); });
+    channel_.enableReading();
 }
-Acceptor::~Acceptor() {}
 
+// channel负责取消注册fd,socket负责关闭fd！！！
+Acceptor::~Acceptor() = default;
+
+void Acceptor::listen() {
+    socket_.listen();
+}
 
 void Acceptor::handleRead() {
     InetAddress peerAddr;
-    int connfd = acceptorSocket_.accept(&peerAddr);
-    int flags = fcntl(connfd, F_GETFL, 0);
-    fcntl(connfd, F_SETFL, flags | O_NONBLOCK); // 通信socket一定要设置为非阻塞！！！
+    int connfd = socket_.accept(&peerAddr);
+    // int flags = fcntl(connfd, F_GETFL, 0);
+    // fcntl(connfd, F_SETFL, flags | O_NONBLOCK); // 通信socket一定要设置为非阻塞！！！
     if (connfd >= 0) {
         if (newConnectionCallback_)
             newConnectionCallback_(connfd, peerAddr);

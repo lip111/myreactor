@@ -10,15 +10,16 @@ namespace myreactor {
 // 构造函数
 
 // EPOLL_CLOEXEC保证exec执行时关闭fd,防止被子进程继承
-Poller::Poller(): epollfd_(epoll_create1(EPOLL_CLOEXEC)), events_(Poller::kInitEventListSize) {}
+EpollPoller::EpollPoller(): epollfd_(epoll_create1(EPOLL_CLOEXEC)), 
+    events_(EpollPoller::kInitEventListSize) {}
 
-Poller::~Poller() {
+EpollPoller::~EpollPoller() {
     ::close(epollfd_);
 }
 
 // 查询
 
-int Poller::poll(int timeoutMs, std::vector<Channel*>& activeChannels) {    // 注意传递引用！！！
+int EpollPoller::poll(int timeoutMs, std::vector<Channel*>& activeChannels) {    // 注意传递引用！！！
 
     int numEvents = epoll_wait(epollfd_, events_.data(), static_cast<int>(events_.size()), timeoutMs);
     if (numEvents > 0) {
@@ -38,7 +39,7 @@ int Poller::poll(int timeoutMs, std::vector<Channel*>& activeChannels) {    // �
     return numEvents;
 }
 
-void Poller::updateChannel(Channel* channel) {
+int EpollPoller::updateChannel(Channel* channel) {
 
     int socketfd = channel->fd();
     epoll_event event;
@@ -49,29 +50,31 @@ void Poller::updateChannel(Channel* channel) {
     if (auto it = channels_.find(socketfd); it == channels_.end()) {
         if(0 == ::epoll_ctl(epollfd_, EPOLL_CTL_ADD, socketfd, &event)) {
             channels_[socketfd] = channel;
+            return 0;
         }
         else {
-            // todo 添加到日志，暂时先打印
-            fprintf(stderr, "Poller::updateChannel ADD failed, fd=%d, errno=%d\n", socketfd, errno);
+            return -1;
         }
     }
     // 旧fd, 更新事件
     else {
         if(0 != ::epoll_ctl(epollfd_, EPOLL_CTL_MOD, socketfd, &event)) {
-            // todo 添加到日志，暂时先打印
-            fprintf(stderr, "Poller::updateChannel MOD failed, fd=%d, errno=%d\n", socketfd, errno);
+            return -1;
+        } 
+        else {
+            return 0;
         }
     }
 }
 
-void Poller::removeChannel(Channel* channel) {
+int EpollPoller::removeChannel(Channel* channel) {
     int socketfd = channel->fd();
     if(0 == ::epoll_ctl(epollfd_, EPOLL_CTL_DEL, socketfd, nullptr)) {
         channels_.erase(socketfd);
+        return 0;
     }
     else {
-        // todo 添加到日志，暂时先打印
-        fprintf(stderr, "Poller::removeChannel DEL failed, fd=%d, errno=%d\n", socketfd, errno);
+        return -1;
     }
 }
 

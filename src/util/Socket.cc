@@ -15,6 +15,14 @@ Socket::~Socket() {
         ::close(fd_);
 }
 
+// tcpconnection的handleclose需提前关闭fd,
+// 但是析构函数中又会析构,所以handleclose之后设置为无效值！！！
+void Socket::close() {
+    if (fd_ >= 0) {
+        ::close(fd_);
+        fd_ = -1;
+    }
+}
 
 // 查询
 

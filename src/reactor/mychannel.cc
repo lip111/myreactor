@@ -1,6 +1,7 @@
 #include "mychannel.h"
 #include "sys/epoll.h"
 #include "myeventloop.h"
+#include <cstring>
 
 namespace myreactor {
 
@@ -8,14 +9,22 @@ namespace myreactor {
 Channel::Channel(EventLoop* loop, int fd): loop_(loop), fd_(fd), 
     events_(0), revents_(0), eventHandling_(false) {}
 
-Channel::~Channel() { disableAll(); }
+Channel::~Channel() { remove(); }
 
 void Channel::update() { 
-    loop_->updateChannel(this);
+    int res = loop_->updateChannel(this);
+    if (res < 0) {
+        fprintf(stderr, "Channel::update failed, fd=%d, errno=%d (%s)\n",
+        fd_, errno, strerror(errno));
+    }
 }
 
 void Channel::remove() {
-    loop_->removeChannel(this);
+    int res = loop_->removeChannel(this);
+    if (res < 0 && errno != EBADF) { // 文件描述符已关闭或者不存在
+        fprintf(stderr, "Channel::remove failed, fd=%d, errno=%d (%s)\n",
+        fd_, errno, strerror(errno));
+    }
 }
 
 bool Channel::isWriting() const { return events_ & EPOLLOUT; }
@@ -84,8 +93,7 @@ void Channel::disableWriting() {
 
 void Channel::disableAll() {
     events_ = 0;
-    update();
+    remove();
 }
 
-;
 }

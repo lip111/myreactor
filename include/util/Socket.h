@@ -22,6 +22,7 @@ public:
     void listen(int backlog = 128);
     int accept(InetAddress* peerAddr);
     void connect(const InetAddress& serverAddr);
+    void close();
 
     void setReuseAddr(bool on);
     void setTcpNoDelay(bool on);
@@ -30,7 +31,7 @@ public:
     void setKeepAlive(bool on);
 
 private:
-    const int fd_;
+    int fd_;
 };
 
 }

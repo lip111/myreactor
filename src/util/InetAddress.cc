@@ -41,6 +41,4 @@ void InetAddress::setIp(const std::string& ip) {
 
 
 
-
-;
 }

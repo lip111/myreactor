@@ -5,6 +5,7 @@
 #include <functional>
 
 namespace myreactor {
+class EventLoopThreadPool;
 class EventLoop;
 class TcpConnection;
 class Acceptor;
@@ -18,6 +19,7 @@ public:
     TcpServer(EventLoop* loop, const InetAddress& listenaddr);
     ~TcpServer();
 
+    void setThreadNum(int numThreads);
     void start();
 
     void setMessageCallback(MessageCallback cb) { messageCallback_ = std::move(cb); }
@@ -32,6 +34,7 @@ private:
     InetAddress localaddr_;
     std::unique_ptr<Acceptor> acceptor_;
     std::unordered_map<std::string, std::shared_ptr<TcpConnection>> connections_;   // 保存活跃连接
+    std::unique_ptr<EventLoopThreadPool> threadpool_;
 
     MessageCallback messageCallback_;
     ConnectionCallback connectionCallback_;
