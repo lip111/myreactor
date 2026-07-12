@@ -3,6 +3,7 @@
 #include "mychannel.h"
 #include <cstdio>
 #include <cerrno>
+#include <mylogger.h>
 
 
 namespace myreactor {
@@ -35,6 +36,9 @@ int EpollPoller::poll(int timeoutMs, std::vector<Channel*>& activeChannels) {   
             events_.resize(events_.size() * 2);
         }
     }
+    else if (numEvents < 0 && errno != EINTR) { // EINTR:系统中断
+        LOG_ERROR << "epoll_wait failed, errno: " << errno;
+    }
 
     return numEvents;
 }
@@ -53,12 +57,14 @@ int EpollPoller::updateChannel(Channel* channel) {
             return 0;
         }
         else {
+            LOG_ERROR << "epoll_ctl ADD failed, fd = " << socketfd << ", errno = " << errno;
             return -1;
         }
     }
     // 旧fd, 更新事件
     else {
         if(0 != ::epoll_ctl(epollfd_, EPOLL_CTL_MOD, socketfd, &event)) {
+            LOG_ERROR << "epoll_ctl MOD failed, fd = " << socketfd << ", errno = " << errno;
             return -1;
         } 
         else {
@@ -74,6 +80,8 @@ int EpollPoller::removeChannel(Channel* channel) {
         return 0;
     }
     else {
+        if (errno != EBADF) // EBADF:文件描述符fd已被关闭
+            LOG_ERROR << "epoll_ctl DEL failed, fd = " << socketfd << ", errno = " << errno;
         return -1;
     }
 }

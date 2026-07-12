@@ -15,6 +15,10 @@ void EventLoopThreadPool::setThreadNum(int numThreads) {
     numThreads_ = numThreads;
 }
 
+int EventLoopThreadPool::numThreads() const {
+    return numThreads_;
+}
+
 void EventLoopThreadPool::start() {
 
     started_ = true;

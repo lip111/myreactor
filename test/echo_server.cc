@@ -3,21 +3,22 @@
 #include "myeventloop.h"
 #include "InetAddress.h"
 #include <iostream>
+#include <mylogger.h>
 
 
 void onConnection(const std::shared_ptr<myreactor::TcpConnection>& conn) {
 
-    if (conn->connected()) {
-        std::cout << "[INFO] New connection established from "
-            << conn->peeraddr().toIpPort() 
-            << " thread id: " << conn->getLoop()->threadId() << std::endl;  
-    }
-    else {
-        std::cout << "[INFO] Connection from "
-            << conn->peeraddr().toIpPort() 
-            << " thread id: " << conn->getLoop()->threadId()
-            << " closed" << std::endl;
-    }
+    // if (conn->connected()) {
+    //     std::cout << "[INFO] New connection established from "
+    //         << conn->peeraddr().toIpPort() 
+    //         << " thread id: " << conn->getLoop()->threadId() << std::endl;  
+    // }
+    // else {
+    //     std::cout << "[INFO] Connection from "
+    //         << conn->peeraddr().toIpPort() 
+    //         << " thread id: " << conn->getLoop()->threadId()
+    //         << " closed" << std::endl;
+    // }
 }
 
 void onMessage(const std::shared_ptr<myreactor::TcpConnection>& conn, myreactor::Buffer* buffer) {
@@ -26,7 +27,7 @@ void onMessage(const std::shared_ptr<myreactor::TcpConnection>& conn, myreactor:
     std::string msg(buffer->peek(), n);
 
     buffer->retrieve(n);
-    std::cout << "receive " << n << " bytes, msg: " << msg << std::endl;
+    // std::cout << "receive " << n << " bytes, msg: " << msg;
     conn->send(msg);
 }
 

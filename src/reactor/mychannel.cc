@@ -2,6 +2,8 @@
 #include "sys/epoll.h"
 #include "myeventloop.h"
 #include <cstring>
+#include <mylogger.h>
+#include <cerrno>
 
 namespace myreactor {
 
@@ -12,18 +14,13 @@ Channel::Channel(EventLoop* loop, int fd): loop_(loop), fd_(fd),
 Channel::~Channel() { remove(); }
 
 void Channel::update() { 
-    int res = loop_->updateChannel(this);
-    if (res < 0) {
-        fprintf(stderr, "Channel::update failed, fd=%d, errno=%d (%s)\n",
-        fd_, errno, strerror(errno));
-    }
+    loop_->updateChannel(this);
 }
 
 void Channel::remove() {
     int res = loop_->removeChannel(this);
     if (res < 0 && errno != EBADF) { // 文件描述符已关闭或者不存在
-        fprintf(stderr, "Channel::remove failed, fd=%d, errno=%d (%s)\n",
-        fd_, errno, strerror(errno));
+        LOG_ERROR << "Channel::remove failed, fd = " << fd_ << ", errno = " << errno;
     }
 }
 

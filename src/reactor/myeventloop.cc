@@ -3,6 +3,7 @@
 #include "mychannel.h"
 #include <sys/eventfd.h>
 #include <unistd.h>
+#include <mylogger.h>
 
 namespace myreactor {
 
@@ -65,6 +66,9 @@ void EventLoop::doPendingFunctors() {
         std::swap(functors, pendingFunctors_);
     }
 
+    if (!functors.empty())
+        LOG_DEBUG << "Doing " << functors.size() << " pending functors in loop " << this;
+
     for(auto functor: functors) {
         functor();
     }
@@ -74,6 +78,7 @@ void EventLoop::doPendingFunctors() {
 void EventLoop::handleRead() {
     uint64_t one = 0;
     ::read(wakeupFd_, &one, sizeof(one));
+    LOG_DEBUG << "Receiver, Waken up thread " << std::this_thread::get_id();
 
 }
 
@@ -89,6 +94,7 @@ void EventLoop::queueInLoop(std::function<void()> cb) {
         pendingFunctors_.push_back(std::move(cb));
     }
     wakeup();
+    LOG_DEBUG << "Sender, current thread " << std::this_thread::get_id();
 }
 
 void EventLoop::runInLoop(std::function<void()> cb) {

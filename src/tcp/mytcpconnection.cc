@@ -2,6 +2,8 @@
 #include <cstring>
 #include <iostream>
 #include <thread>
+#include "mylogger.h"
+#include <cerrno>
 
 namespace myreactor {
 
@@ -32,6 +34,7 @@ void TcpConnection::handleRead() {
     auto n = inputbuffer_.readFd(socket_.fd(), &savedErrno);
     // inputbuffer_.readFd(socket_.fd(), &savedErrno);   //  测试一下通信socket阻塞模式下的线程阻塞！！！
     if (n > 0) {
+        LOG_INFO << "receive " << n << " bytes, msg: " << inputbuffer_.peek();
         if (readCallback_) {
             // 共享指针延长TcpConnection对象生命周期,避免异步执行时对象销毁
             readCallback_(shared_from_this(), &inputbuffer_);
@@ -42,6 +45,7 @@ void TcpConnection::handleRead() {
     }
     else {   // 出错
         errno = savedErrno;
+        LOG_ERROR << "Tcpconnection read failed: fd = " << socket_.fd() << ", errno = " << errno;
         handleError();
     }
 }
@@ -50,22 +54,29 @@ void TcpConnection::handleRead() {
 void TcpConnection::handleWrite() {
     auto n = ::write(socket_.fd(), outputbuffer_.peek(), outputbuffer_.readableBytes());
     if (n > 0) {
+        LOG_DEBUG << "Send " << n << "bytes to fd = " << socket_.fd();
         outputbuffer_.retrieve(n);
         if (0 == outputbuffer_.readableBytes()) {
             if (writeCompleteCallback_)
                 writeCompleteCallback_(shared_from_this());
         }
     }
-    else if (n == 0) {   // 对端关闭连接
-        handleClose();
-    }
-    else if (n == -1 && errno != EAGAIN) {   // 返回-1且不是EAGAIN才是真正出错
-        handleError();
+    else if (n < 0) {
+        if (errno == EPIPE || errno == ECONNRESET) {  // 对端连接关闭(EPIPE正常关闭，ECONNRESET异常关闭)
+            LOG_WARN << "write to closed peer, fd = " << socket_.fd();
+            handleClose();
+        }
+        else if (errno != EAGAIN) {
+            LOG_ERROR << "Tcpconnection write failed: fd = " << socket_.fd() << ", errno = " << errno;
+            handleError();
+        }
+
     }
 }
 
 // 将注册的fd从epoll中删除,通知上层处理
 void TcpConnection::handleClose() {
+    LOG_INFO << "Connection closed, fd = " << socket_.fd();
     channel_.remove();
     socket_.close();
     setConnected(false);    // 关闭之前设置下状态
@@ -74,12 +85,6 @@ void TcpConnection::handleClose() {
 }
 
 void TcpConnection::handleError() {
-    int err = errno;
-    
-    // todo 添加到日志，暂时先打印
-    fprintf(stderr, "TcpConnection::handleError [%s:%d] error: %d (%s)\n",
-        peeraddr_.toIp().c_str(), peeraddr_.toPort(), err, strerror(err));
-    
     handleClose();
 }
 
@@ -114,6 +119,7 @@ void TcpConnection::send(const std::string& message) {
 void TcpConnection::connectEstablished() {
     connected_ = true;
     channel_.enableReading();
+    LOG_INFO << "Connection established, fd = " << socket_.fd();
 }
 
 }

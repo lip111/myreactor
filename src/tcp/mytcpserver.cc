@@ -4,6 +4,7 @@
 #include "myeventloopthreadpool.h"
 #include "myeventloop.h"
 #include <iostream>
+#include <mylogger.h>
 
 namespace myreactor {
 
@@ -26,6 +27,7 @@ void TcpServer::newConnection(int connfd, const InetAddress& peeraddr) {
     EventLoop* slaveloop = threadpool_->getNextLoop(); 
     auto conn = std::make_shared<TcpConnection>(slaveloop, connfd, localaddr_, peeraddr);
     connections_.emplace(conn->name(), conn);
+    LOG_INFO << "Dispatch Tcpconnection from " << peeraddr.toIpPort() << " to thread " << slaveloop->threadId();
 
     // 设置读回调
     conn->setReadCallback([this](const std::shared_ptr<TcpConnection>& conn, Buffer* buffer){
@@ -54,7 +56,9 @@ void TcpServer::newConnection(int connfd, const InetAddress& peeraddr) {
 void TcpServer::removeConnection(const std::shared_ptr<TcpConnection>& conn) {
 
     loop_->queueInLoop([this, conn](){
-        connections_.erase(conn->name());
+        auto deleted = connections_.erase(conn->name());
+        if (deleted > 0)
+            LOG_INFO << "Remove Tcpconnction from " << conn->peeraddr().toIpPort() << ", remaining: " << connections_.size(); 
         if (connectionCallback_)
             connectionCallback_(conn);
     });
@@ -62,11 +66,11 @@ void TcpServer::removeConnection(const std::shared_ptr<TcpConnection>& conn) {
 }
 
 void TcpServer::start() {
-    std::cout << "TcpServer listening on " << localaddr_.toIpPort() << std::endl;
     threadpool_->start();
     loop_->runInLoop([this](){
         acceptor_->listen();
     });
+    LOG_INFO << "TcpServer started on " << localaddr_.toIpPort() << " with " << threadpool_->numThreads() << " threads";
 
 }
 

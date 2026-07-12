@@ -2,6 +2,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <mylogger.h>
+#include <cerrno>
 
 namespace myreactor {
 
@@ -28,9 +30,11 @@ void Acceptor::listen() {
 void Acceptor::handleRead() {
     InetAddress peerAddr;
     int connfd = socket_.accept(&peerAddr);
-    // int flags = fcntl(connfd, F_GETFL, 0);
-    // fcntl(connfd, F_SETFL, flags | O_NONBLOCK); // 通信socket一定要设置为非阻塞！！！
+    if (connfd < 0 && errno != EAGAIN)
+        LOG_ERROR << "Accept failed, errno = " << errno;
+
     if (connfd >= 0) {
+        LOG_INFO << "New connection from " << peerAddr.toIpPort() << ", fd = " << connfd;
         if (newConnectionCallback_)
             newConnectionCallback_(connfd, peerAddr);
         else

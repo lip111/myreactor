@@ -1,6 +1,7 @@
 #include "mybuffer.h"
 #include "sys/uio.h"
 #include <cerrno>
+#include <mylogger.h>
 
 namespace myreactor {
 
@@ -48,6 +49,7 @@ ssize_t Buffer::readFd(int fd, int* savedErrno) {
     auto bytes = readv(fd, vec, cnt);
     if (bytes < 0) {
         *savedErrno = errno;
+        LOG_ERROR << "Buffer::readFd failed, fd = " << fd << ", errno = " << errno; 
         return -1;
     }
 

@@ -15,7 +15,8 @@ public:
     ~EventLoopThreadPool();
 
     void setThreadNum(int numThreads);
-    
+    int numThreads() const;
+
     // 创建并启动所有从线程
     void start();
 
