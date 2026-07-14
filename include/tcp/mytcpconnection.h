@@ -53,7 +53,17 @@ public:
     // 连接注册到epoll实例，使能可读事件
     void connectEstablished();
 
+    // 设置空闲超时
+    void enableIdleTimeout(int seconds);
+    void setIdleTimeout(int seconds);
+
 private:
+    void handleRead();
+    void handleWrite();
+    void handleClose();
+    void handleError();
+
+
     EventLoop* loop_;
     InetAddress localaddr_;
     InetAddress peeraddr_;
@@ -71,11 +81,8 @@ private:
     Buffer inputbuffer_;
     Buffer outputbuffer_;
 
-
-    void handleRead();
-    void handleWrite();
-    void handleClose();
-    void handleError();
+    int idleSeconds_ = 0;   // 0表示不启用空闲超时
+    int idleTimerId_ = -1;   // 空闲超时定时器id,-1表示未设置
 };
 
 

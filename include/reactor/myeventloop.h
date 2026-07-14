@@ -5,6 +5,7 @@
 #include <functional>
 #include <vector>
 #include <thread>
+#include "mytimerqueue.h"
 
 namespace myreactor {
 
@@ -35,6 +36,11 @@ public:
 
     std::thread::id threadId() const;
 
+    // 定时器接口
+    int runAfter(double delay, TimeCallback cb);
+    int runEvery(double interval, TimeCallback cb);
+    void cancelTimer(int id);
+
 private:
     void wakeup();
     void handleRead();
@@ -51,6 +57,8 @@ private:
     std::mutex mutex_;  // 避免多线程投递任务发生数据竞争
 
     std::thread::id threadId_;  // 当前线程id
+
+    TimerQueue timerQueue_; // 定时器
 };
 
 }

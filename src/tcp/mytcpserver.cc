@@ -40,6 +40,9 @@ void TcpServer::newConnection(int connfd, const InetAddress& peeraddr) {
         removeConnection(conn);
     });
 
+    // 设置空闲超时,单位/秒
+    conn->setIdleTimeout(30);
+
     // // 触发连接建立回调
     // if (connectionCallback_)
     //     connectionCallback_(conn);

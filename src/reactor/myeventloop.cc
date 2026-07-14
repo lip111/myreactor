@@ -12,7 +12,8 @@ EventLoop::EventLoop(): quit_(false),
         poller_(std::make_unique<EpollPoller>()),
         wakeupFd_(::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)),
         wakeupChannel_(this, wakeupFd_),
-        threadId_(std::this_thread::get_id())
+        threadId_(std::this_thread::get_id()),
+        timerQueue_(this)
 {
     wakeupChannel_.setReadCallback([this](){ handleRead(); });
     wakeupChannel_.enableReading();
@@ -32,7 +33,7 @@ std::thread::id EventLoop::threadId() const {
 void EventLoop::loop() {
     while(!quit_) {
         std::vector<Channel*> activeChannels;
-        int numEvents = poller_->poll(10000, activeChannels);
+        int numEvents = poller_->poll(-1, activeChannels);
 
         // 先处理任务队列中的任务
         doPendingFunctors();
@@ -108,6 +109,17 @@ bool EventLoop::isInLoopThread() const {
     return threadId_ == std::this_thread::get_id();
 }
 
+int EventLoop::runAfter(double delay, TimeCallback cb) {
+    return timerQueue_.addTimer(std::move(cb), delay, 0.0);
+}
+
+int EventLoop::runEvery(double interval, TimeCallback cb) {
+    return timerQueue_.addTimer(std::move(cb), interval, interval);
+}
+
+void EventLoop::cancelTimer(int id) {
+    timerQueue_.cancelTimer(id);
+}
 
 
 }
