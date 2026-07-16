@@ -77,7 +77,7 @@ void TimerQueue::resetTimerfd() {
         duration = std::chrono::milliseconds(0);
     }
 
-    // LOG_DEBUG << "resetTimerfd: duration = " << duration.count() << " ms";
+    LOG_DEBUG << "resetTimerfd: duration = " << duration.count() << " ms";
 
     timespec ts;
     ts.tv_sec = duration.count() / 1000;

@@ -39,7 +39,7 @@ int main() {
     server.setMessageCallback(onMessage);
     server.setConnectionCallback(onConnection);
 
-    server.setThreadNum(3);
+    // server.setThreadNum(3);
     server.start();
 
     loop.loop();

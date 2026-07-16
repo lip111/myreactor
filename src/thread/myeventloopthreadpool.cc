@@ -6,7 +6,7 @@ namespace myreactor {
 
 EventLoopThreadPool::EventLoopThreadPool(EventLoop* mainLoop)
     :mainLoop_(mainLoop), next_(0), started_(false),
-    numThreads_(std::thread::hardware_concurrency()/2) {}
+    numThreads_(std::thread::hardware_concurrency()) {}
 
 
 EventLoopThreadPool::~EventLoopThreadPool() = default;

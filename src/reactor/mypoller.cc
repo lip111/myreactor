@@ -80,7 +80,7 @@ int EpollPoller::removeChannel(Channel* channel) {
         return 0;
     }
     else {
-        if (errno != EBADF) // EBADF:文件描述符fd已被关闭
+        if (errno != EBADF && errno != ENOENT) // EBADF:文件描述符fd已被关闭 ENOENT:fd不存在
             LOG_ERROR << "epoll_ctl DEL failed, fd = " << socketfd << ", errno = " << errno;
         return -1;
     }

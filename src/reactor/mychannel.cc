@@ -19,7 +19,7 @@ void Channel::update() {
 
 void Channel::remove() {
     int res = loop_->removeChannel(this);
-    if (res < 0 && errno != EBADF) { // 文件描述符已关闭或者不存在
+    if (res < 0 && errno != EBADF && errno != ENOENT) { // 文件描述符已关闭或者不存在
         LOG_ERROR << "Channel::remove failed, fd = " << fd_ << ", errno = " << errno;
     }
 }
