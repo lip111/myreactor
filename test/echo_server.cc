@@ -4,6 +4,13 @@
 #include "InetAddress.h"
 #include <iostream>
 #include <mylogger.h>
+#include <csignal>
+
+myreactor::EventLoop* g_eventloop = nullptr;
+extern "C" void signalHandler(int) {
+    if (g_eventloop)
+        g_eventloop->quit();
+}
 
 
 void onConnection(const std::shared_ptr<myreactor::TcpConnection>& conn) {
@@ -32,7 +39,12 @@ void onMessage(const std::shared_ptr<myreactor::TcpConnection>& conn, myreactor:
 }
 
 int main() {
+    ::signal(SIGINT, signalHandler);
+    ::signal(SIGTERM, signalHandler);
+
     myreactor::EventLoop loop;
+    g_eventloop = &loop;
+
     myreactor::InetAddress listenAddr(8080);
     myreactor::TcpServer server(&loop, listenAddr);
 
