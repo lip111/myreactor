@@ -6,8 +6,9 @@
 
 **技术栈**：C++17、epoll、多线程、网络socket、eventfd、timerfd
 
-## 2. 整体架构
+## 2. 整体架构和目录结构
 
+### 2.1 整体架构
 采用主从reactor模型：
 
 - **主EventLoop**：负责监听新连接，通过Acceptor接收后，将新连接分配给子线程。
@@ -23,6 +24,41 @@
   - EventLoopThreadPool（线程池，管理子线程）
   - TimerQueue（定时器，基于timerfd）
   
+### 2.2 目录结构
+
+头文件位于 `include/`，源文件位于 `src/`，两者目录层次一致。各模块文件对应关系如下：
+
+- **reactor/**（反应堆核心）
+  - `myeventloop.h/.cc` — 事件循环引擎
+  - `mychannel.h/.cc` — fd + 回调封装
+  - `mypoller.h/.cc` — epoll 封装
+  - `mytimerqueue.h/.cc` — 定时器管理
+
+- **tcp/**（TCP 网络通信）
+  - `myacceptor.h/.cc` — 监听新连接
+  - `mybuffer.h/.cc` — 读写缓冲区
+  - `mytcpconnection.h/.cc` — 连接管理
+  - `mytcpserver.h/.cc` — 服务器顶层封装
+
+- **thread/**（并发处理）
+  - `myeventloopthread.h/.cc` — IO线程封装
+  - `myeventloopthreadpool.h/.cc` — 线程池
+
+- **util/**（基础工具）
+  - `Socket.h/.cc` — 网络Socket系统调用封装
+  - `Inetaddress.h/.cc` — IP/端口地址封装
+  - `mylogger.h/.cc` — 日志输出
+
+- **test/**（测试示例）
+  - `echo_server.cc` — 回显服务器测试
+
+- **根目录辅助脚本**
+  - `build.sh` — 编译构建可执行程序
+  - `check.sh` — 使用 valgrind 检查内存泄漏
+
+其中 `build.sh` 负责调用 g++/cmake 编译项目，`check.sh` 通过 valgrind 运行测试程序，检测内存泄漏和非法访问。
+
+
 ## 3. 关键类说明
 
 ### 3.1 EventLoop
