@@ -90,6 +90,8 @@ void TcpConnection::handleWrite() {
 // 将注册的fd从epoll中删除,通知上层处理
 void TcpConnection::handleClose() {
 
+    if (!connected_)    
+        return;
     LOG_INFO << "handleClose called, fd=" << socket_.fd() << ", connected_=" << connected_;
     setConnected(false);    // 关闭之前设置下状态
     if (idleSeconds_ > 0) {
@@ -112,6 +114,8 @@ void TcpConnection::handleError() {
 
 void TcpConnection::send(const std::string& message) {
 
+    if (!connected_)    
+        return;
     if (message.empty()) return;
 
     int message_len = message.size();

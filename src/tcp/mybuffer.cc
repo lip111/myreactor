@@ -19,7 +19,7 @@ typename Buffer::size_type Buffer::writableBytes() const {
 void Buffer::append(const char* data, size_type n) {
     if (writableBytes() < n)
         buffer_.resize(writerIdx_+n);
-    
+    std::copy(data, data+n, buffer_.begin()+writerIdx_);
     writerIdx_ += n;
 }
 
