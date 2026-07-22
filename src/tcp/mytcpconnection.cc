@@ -70,6 +70,7 @@ void TcpConnection::handleWrite() {
         LOG_DEBUG << "Send " << n << "bytes to fd = " << socket_.fd();
         outputbuffer_.retrieve(n);
         if (0 == outputbuffer_.readableBytes()) {
+            channel_.disableWriting();
             if (writeCompleteCallback_)
                 writeCompleteCallback_(shared_from_this());
         }

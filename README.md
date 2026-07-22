@@ -141,3 +141,185 @@
     - `addTimer()`：添加定时器，更新最小堆，如果该定时器到期时间最短，更新timerfd的超时时间
     - `cancelTimer()`：删除定时器，更新最小堆，如果删除的定时器到期时间最短，更新timerfd的超时时间
     - `handleRead()`：timerfd可读时调用触发，取出所有到期的定时器，调用定时器的回调，更新最小堆和timerfd的超时时间
+
+
+## 4. 核心流程
+
+### 4.1 服务器启动流程
+```
+main()
+|
+|--> 创建主线程EventLoop：mainloop
+|
+|--> 创建TcpServer：server(mainloop, addr)
+|           |--> 创建Acceptor: acceptor(mainloop, addr)
+|           |           |--> 创建监听socket(listenfd) 
+|           |           |--> listenfd绑定addr
+|           |           |--> 设置listenfd读回调
+|           |           |--> 注册listenfd到主线程epoll实例(关注EPOLLIN)
+|           |--> 创建线程池(EventLoopThreadPool)：threadpool
+|
+|--> server.start()
+|           |--> 启动线程池：threadpool->start()
+|           |           |--> 创建N个子线程，每个子线程内创建EventLoop，调用loop()
+|           |--> 开始监听端口：acceptor->listen()
+|
+|--> mainloop->loop()     
+|           |--> while(!quit_)
+|                       |--> epoll_wait()阻塞等待事件                                  
+|                       |            |--> listenfd可读(新连接到来)                               
+|                       |            |--> eventfd可读(跨线程唤醒)                            
+|                       |--> doPendingFunctors()处理跨线程投递过来的任务                           
+|                       |--> 处理就绪的channel回调(handleEvent)
+|
+```
+
+### 4.2 新连接接入流程
+```
+主线程listenfd可读
+|
+|--> epoll_wait()返回,调用listenfd读回调(acceptor->handleRead)
+|
+|--> acceptor->handleRead()
+|           |--> accept系统调用获取通信socket(connfd)
+|           |--> 调用server.newConnection(connfd, peeraddr)
+|
+|--> server.newConnection()
+|           |--> 创建TcpConnection对象conn(设置connfd读/写回调，conn读/关闭回调)
+|           |--> 从线程池选取一个子EventLoop(轮流选取子线程n(1,2,3...)的slaveloop)
+|           |--> slaveloop->queueInLoop(新连接注册任务)
+|                       |--> 将任务加入slaveloop pendingFunctors队列
+|                       |--> 向eventfd写入数据，唤醒子线程n
+|
+|--> 子线程n被唤醒(eventfd可读)
+|           |
+|           |--> epoll_wait()返回，先执行任务队列任务(doPendingFunctors)，后调用eventfd读回调(slaveloop->handleRead)
+|           |
+|           |--> 执行pendingFunctors(调用conn->connectionEstablished)
+|           |--> conn->connectedEstablished()
+|           |           |--> 注册connfd到子线程n的epoll实例(关注EPOLLIN)
+|           |           |--> 启动空闲超时定时器(条件:idleSeconds>0)        
+|           |--> slaveloop->handleRead()清空eventfd内核计数器
+|
+```
+
+### 4.3 数据读写流程
+```
+子线程connfd可读
+|
+|--> epoll_wait()返回，调用connfd读回调(conn->handleRead)
+|
+|--> conn->handleRead()
+|           |--> readv系统调用ret>0：内核接收缓冲区数据->inputBuffer
+|           |--> 调用conn读回调(内部是用户消息回调：messageCallback(conn,&inputBuffer))
+|
+|--> 用户回调处理数据，调用conn->send(response)回复client
+|
+|--> conn->send()
+|           |--> 优先直接写入内核发送缓冲区(::write)
+|           |--> 若一次写不完，剩余的->outputBuffer
+|           |--> 更新epoll，connfd关注EPOLLOUT事件
+|
+|--> 等待下一次epoll_wait
+
+子线程connfd可写(EPOLLOUT触发)
+|
+|--> epoll_wait()返回，调用connfd写回调(conn->handleWrite)
+|
+|--> conn->handleWrite()
+|           |--> outputBuffer->内核发送缓冲区(::write)
+|           |--> 若未写完，等待下一次epoll_wait的EPOLLOUT事件
+|           |--> 若全部写完
+|                   |--> 关闭EPOLLOUT事件(disableWriting)
+|                   |--> 调用写完成回调(若被设置的话)
+```
+
+### 4.4 连接关闭流程
+```
+客户端关闭连接，子线程connfd可读(readv返回0)
+|
+|--> epoll_wait()返回，调用读回调(conn->handleRead)
+|
+|--> conn->handleRead()
+|           |--> readv系统调用ret==0，调用handleClose
+|
+|--> conn->handleClose()
+|           |--> 删除空闲超时定时器(若有) 
+|           |--> epoll删除connfd
+|           |--> 关闭connfd(::close)
+|           |--> 调用conn关闭回调(server.removeConnection)
+|
+|--> server.removeConnection()
+|           |--> mainloop->queueInLoop(连接删除任务)
+|                   |--> 将任务加入主线程mainloop pendingFunctors队列
+|                   |--> 向eventfd写入数据，唤醒主线程
+|
+|--> 主线程被唤醒(eventfd可读)
+|           |
+|           |--> 执行pendingFunctors(连接删除任务)
+|           |--> 从server的connection_ map中删除该连接
+|           |--> 调用用户连接关闭回调(如果有的话)
+|
+```
+
+### 4.5 定时器触发流程
+```
+timerfd可读
+|
+|--> epoll_close()返回，调用timerfd读回调(timerQueue.handleRead)
+|
+|--> timerQueue.handleRead()
+|           |--> read系统调用读取timerfd(清空内核timerfd计数器)
+|           |--> 从timers最小堆中取出所有到期定时器
+|           |       |--> 循环判断堆顶定时器到期时间 <= 当前时间
+|           |--> 遍历到期定时器列表
+|           |       |--> 执行定时器回调
+|           |       |--> 若是周期性定时器
+|           |               |--> 重新计算下次到期时间(当前时间+间隔)
+|           |               |--> 重新插入最小堆           
+|           |--> 更新timerfd到期时间
+|                   |--> 取堆顶定时器到期时间，设置timerfd
+|
+|--> 等待下一次epoll_wait
+```
+
+### 4.6 服务器关闭流程
+```
+CTRL+C触发SIGINT信号
+|
+|--> 主线程信号处理函数被调用
+|           |--> mainloop->quit()，设置quit_ = true
+|
+|--> mainloop.loop()退出while循环，函数返回
+|
+|--> 主线程main函数结束，开始析构局部遍历(server、mainloop)
+|           |--> 析构server
+|           |       |--> 析构connections_ map
+|           |       |--> 若map非空，逐个析构TcpConnection(share_ptr计数归0)
+|           |               |--> 析构channel(从子线程epoll中移除connfd)
+|           |               |--> 析构socket(关闭connfd)    
+|           |
+|           |--> 析构threadPool_(EventLoopThreadPool)
+|           |       |——> 析构threads_ vector
+|           |               |--> 析构每个unique_ptr<EventLoopThread>
+|           |                       |-->调用EventLoopThread析构函数
+|           |                       |   |--> 子线程loop->quit()
+|           |                       |   |--> 子线程EventLoop析构
+|           |                       |   |--> 子线程thread.join()
+|           |                       |--> 调用std::thread析构函数
+|           |
+|           |--> 析构acceptor_
+|           |       |--> 析构channel(从主线程epoll中移除listenfd)
+|           |       |--> 析构socket(关闭listenfd)
+|           |
+|           |--> 析构mainloop
+|                   |--> 调用EventLoop析构函数
+|                   |       |--> 从主线程epoll中移除eventfd
+|                   |       |--> 关闭eventfd(::close)
+|                   |——> 调用TimerQueue析构函数
+|                   |       |--> 从主线程epoll中移除timerfd
+|                   |       |--> 关闭timerfd(::close)
+|                   |--> 调用Poller析构函数
+|                           |--> 关闭epollfd(::close)
+|
+```
