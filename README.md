@@ -186,20 +186,20 @@ main()
 |
 |--> server.newConnection()
 |           |--> 创建TcpConnection对象conn(设置connfd读/写回调，conn读/关闭回调)
-|           |--> 从线程池选取一个子EventLoop(轮流选取子线程n(1,2,3...)的slaveloop)
-|           |--> slaveloop->queueInLoop(新连接注册任务)
-|                       |--> 将任务加入slaveloop pendingFunctors队列
+|           |--> 从线程池选取一个子EventLoop(轮流选取子线程n(1,2,3...)的subloop)
+|           |--> subloop->queueInLoop(新连接注册任务)
+|                       |--> 将任务加入subloop pendingFunctors队列
 |                       |--> 向eventfd写入数据，唤醒子线程n
 |
 |--> 子线程n被唤醒(eventfd可读)
 |           |
-|           |--> epoll_wait()返回，先执行任务队列任务(doPendingFunctors)，后调用eventfd读回调(slaveloop->handleRead)
+|           |--> epoll_wait()返回，先执行任务队列任务(doPendingFunctors)，后调用eventfd读回调(subloop->handleRead)
 |           |
 |           |--> 执行pendingFunctors(调用conn->connectionEstablished)
 |           |--> conn->connectedEstablished()
 |           |           |--> 注册connfd到子线程n的epoll实例(关注EPOLLIN)
 |           |           |--> 启动空闲超时定时器(条件:idleSeconds>0)        
-|           |--> slaveloop->handleRead()清空eventfd内核计数器
+|           |--> subloop->handleRead()清空eventfd内核计数器
 |
 ```
 
@@ -266,9 +266,9 @@ main()
 ```
 timerfd可读
 |
-|--> epoll_close()返回，调用timerfd读回调(timerQueue.handleRead)
+|--> epoll_wait()返回，调用timerfd读回调(timerQueue.handleRead)
 |
-|--> timerQueue.handleRead()
+|--> timerQueue.handleRead() 
 |           |--> read系统调用读取timerfd(清空内核timerfd计数器)
 |           |
 |           |--> 从timers最小堆中取出所有到期定时器

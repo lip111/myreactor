@@ -24,10 +24,10 @@ void TcpServer::newConnection(int connfd, const InetAddress& peeraddr) {
 
     // auto conn = std::make_shared<TcpConnection>(loop_, connfd, localaddr_, peeraddr);
     // connections_.emplace(conn->name(), conn);
-    EventLoop* slaveloop = threadpool_->getNextLoop(); 
-    auto conn = std::make_shared<TcpConnection>(slaveloop, connfd, localaddr_, peeraddr);
+    EventLoop* subloop = threadpool_->getNextLoop(); 
+    auto conn = std::make_shared<TcpConnection>(subloop, connfd, localaddr_, peeraddr);
     connections_.emplace(conn->name(), conn);
-    LOG_INFO << "Dispatch Tcpconnection from " << peeraddr.toIpPort() << " to thread " << slaveloop->threadId();
+    LOG_INFO << "Dispatch Tcpconnection from " << peeraddr.toIpPort() << " to thread " << subloop->threadId();
 
     // 设置读回调
     conn->setReadCallback([this](const std::shared_ptr<TcpConnection>& conn, Buffer* buffer){
@@ -48,7 +48,7 @@ void TcpServer::newConnection(int connfd, const InetAddress& peeraddr) {
     //     connectionCallback_(conn);
 
     // 连接注册到epoll实例，该任务投递到子线程执行
-    slaveloop->queueInLoop([this, conn]() {
+    subloop->queueInLoop([this, conn]() {
         conn->connectEstablished();
         if (connectionCallback_)
             connectionCallback_(conn);
